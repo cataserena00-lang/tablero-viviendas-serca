@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0B2A4A">
+  <title>Tablero de gestión de plan de viviendas · SERCA Consultora (DEMO)</title>
+  <meta name="description" content="Tablero de ejemplo con datos ficticios para el seguimiento integral de un plan de viviendas cooperativo. SERCA Consultora.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo-slot"><img src="assets/logo.png" alt="Logo" onerror="this.parentNode.classList.add('sin-logo')"></div>
+    <div>
+      <h1>SERCA Consultora <span class="sep">·</span> Tablero de ejemplo</h1>
+      <p class="sub">Seguimiento integral de un plan de viviendas · <strong id="hdr-coop"></strong></p>
+    </div>
+  </div>
+  <button id="btn-pdf" class="btn-pdf" type="button" title="Imprime o guarda todas las secciones como PDF">⬇ Descargar resumen (PDF)</button>
+</header>
+
+<div class="demo-banner" role="note">DEMO — Datos ficticios con fines ilustrativos</div>
+
+<div class="sticky">
+  <nav class="tabs" id="tabs" aria-label="Secciones del tablero"></nav>
+  <div class="filters">
+    <div class="f-group">
+      <span class="f-label">Etapa</span>
+      <div class="seg" id="f-etapa" role="group" aria-label="Filtro por etapa">
+        <button type="button" data-v="todas" class="on">Todas</button>
+        <button type="button" data-v="1">1</button>
+        <button type="button" data-v="2">2</button>
+        <button type="button" data-v="3">3</button>
+      </div>
+    </div>
+    <div class="f-group">
+      <label class="f-label" for="f-periodo">Período</label>
+      <select id="f-periodo">
+        <option value="todo">Todo (14 meses)</option>
+        <option value="12">Últimos 12 meses</option>
+        <option value="6">Últimos 6 meses</option>
+        <option value="3">Últimos 3 meses</option>
+      </select>
+    </div>
+    <div class="f-note" id="f-note" hidden></div>
+  </div>
+</div>
+
+<main>
+
+  <!-- 1. RESUMEN EJECUTIVO ------------------------------------------------ -->
+  <section class="panel" id="p-resumen" data-title="Resumen ejecutivo">
+    <h2 class="print-title">1 · Resumen ejecutivo</h2>
+    <div class="card proyecto" id="proyecto"></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <h3>Alertas tempranas</h3>
+      <ul class="alertas" id="alertas"></ul>
+    </div>
+    <p class="nota">Los indicadores se calculan al mes actual. Semáforos: <span class="chip ok">En orden</span> <span class="chip warn">Atención</span> <span class="chip bad">Crítico</span>. El filtro de etapa recalcula las tarjetas; la cobertura financiera siempre refleja el total del plan.</p>
+  </section>
+
+  <!-- 2. AVANCE DE OBRA --------------------------------------------------- -->
+  <section class="panel" id="p-avance" data-title="Avance de obra">
+    <h2 class="print-title">2 · Avance de obra</h2>
+    <div class="card">
+      <h3>Curva S · avance físico acumulado</h3>
+      <div class="chart-box tall"><canvas id="c-scurve"></canvas></div>
+      <p class="nota">Previsto vs. real por mes. La línea punteada es la proyección si se mantiene el ritmo actual de cada etapa.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Avance por etapa</h3>
+        <div class="chart-box"><canvas id="c-etapas"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Avance por rubro</h3>
+        <div class="chart-box"><canvas id="c-rubros"></canvas></div>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Viviendas por estado</h3>
+        <div class="chart-box"><canvas id="c-estados"></canvas></div>
+        <div class="estado-tot" id="estado-tot"></div>
+      </div>
+      <div class="card">
+        <h3>Desvío respecto del cronograma</h3>
+        <div class="desvio-total" id="desvio-total"></div>
+        <div class="tbl-wrap"><table class="tbl" id="tbl-desvio"></table></div>
+        <p class="nota">Desvío actual: cuánto tiempo de atraso acumula la etapa hoy. Fin proyectado: cuándo terminaría si sigue al ritmo actual.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. STOCK DE MATERIALES ---------------------------------------------- -->
+  <section class="panel" id="p-stock" data-title="Stock de materiales">
+    <h2 class="print-title">3 · Stock de materiales</h2>
+    <div class="card">
+      <h3>Materiales clave · stock y reposición</h3>
+      <div id="stock-alert"></div>
+      <div class="tbl-wrap"><table class="tbl tbl-stock" id="tbl-stock"></table></div>
+      <p class="nota">Cobertura = stock actual ÷ consumo mensual promedio (últimos 6 meses). Semáforo: <span class="chip bad">Crítico</span> si la cobertura es menor al plazo de reposición del proveedor, <span class="chip warn">Atención</span> si supera ese plazo por menos de 1 mes, <span class="chip ok">En orden</span> en el resto. «A comprar» = necesidad restante − stock actual.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Evolución del stock · meses de cobertura</h3>
+        <div class="chart-box"><canvas id="c-stock"></canvas></div>
+        <p class="nota">Materiales críticos. Al pasar el cursor se ve el stock en unidades.</p>
+      </div>
+      <div class="card">
+        <h3>Evolución de precios unitarios</h3>
+        <div class="chart-box"><canvas id="c-precios"></canvas></div>
+        <p class="nota">Índice base 100 = sep-25, comparado con el costo real de la construcción.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PRESUPUESTO VS COSTOS REALES ------------------------------------- -->
+  <section class="panel" id="p-costos" data-title="Presupuesto vs. costos">
+    <h2 class="print-title">4 · Presupuesto vs. costos reales</h2>
+    <div class="note-base">Montos en <strong>millones de pesos del mes base (sep-25)</strong>: el costo real se deflacta por el costo de la construcción para compararlo con el presupuesto original.</div>
+    <div class="card">
+      <h3>Presupuestado vs. ejecutado por rubro</h3>
+      <div class="chart-box tall"><canvas id="c-rubro-costo"></canvas></div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-rubros"></table></div>
+      <p class="nota">«Presupuestado al avance real» es lo que debería haberse gastado para el avance físico logrado hasta hoy. El desvío mide cuánto más cuesta lo hecho.</p>
+    </div>
+    <div class="card">
+      <h3>Evolución mensual acumulada</h3>
+      <div class="chart-box tall"><canvas id="c-costo-acum"></canvas></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Composición del costo real</h3>
+        <div class="chart-box"><canvas id="c-composicion"></canvas></div>
+        <div class="tbl-wrap"><table class="tbl" id="tbl-comp"></table></div>
+      </div>
+      <div class="card">
+        <h3>Costo proyectado a fin de obra</h3>
+        <div class="chart-box"><canvas id="c-eac"></canvas></div>
+        <div class="eac-txt" id="eac-txt"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. CUOTAS DE BENEFICIARIOS ------------------------------------------ -->
+  <section class="panel" id="p-cuotas" data-title="Cuotas de beneficiarios">
+    <h2 class="print-title">5 · Cuotas de beneficiarios</h2>
+    <div class="card">
+      <h3>Evolución de la cobranza · emitido vs. cobrado</h3>
+      <div class="chart-box tall"><canvas id="c-cobranza"></canvas></div>
+      <p class="nota">Montos en millones de pesos corrientes de cada mes (las cuotas se actualizan por el índice).</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Morosidad por tramos</h3>
+        <div class="chips-tramos" id="chips-tramos"></div>
+        <div class="chart-box"><canvas id="c-tramos"></canvas></div>
+        <p class="nota">Evolución del % de beneficiarios con atraso, según días de mora.</p>
+      </div>
+      <div class="card">
+        <h3>Cuotas por etapa / grupo de beneficiarios</h3>
+        <div class="chart-box"><canvas id="c-cuota-etapa"></canvas></div>
+        <div class="tbl-wrap"><table class="tbl" id="tbl-cuota-etapa"></table></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Proyección de cobranza a 12 meses · escenarios</h3>
+      <div class="chart-box tall"><canvas id="c-proy"></canvas></div>
+      <div class="tbl-wrap"><table class="tbl" id="tbl-proy"></table></div>
+      <p class="nota" id="nota-proy"></p>
+    </div>
+  </section>
+
+  <!-- 6. ÍNDICE DE ACTUALIZACIÓN VS COSTOS -------------------------------- -->
+  <section class="panel" id="p-indices" data-title="Índice vs. costos">
+    <h2 class="print-title">6 · Índice de actualización vs. costos reales</h2>
+    <div class="kpis kpis-4" id="kpis-idx"></div>
+    <div class="card">
+      <h3>Variación acumulada desde el mes base</h3>
+      <div class="chart-box tall"><canvas id="c-indices"></canvas></div>
+      <p class="nota">Las líneas punteadas son la proyección con los supuestos de inflación e índice de la sección 7.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Brecha entre ambos (puntos porcentuales)</h3>
+        <div class="chart-box"><canvas id="c-brecha"></canvas></div>
+      </div>
+      <div class="card interpreta" id="interpreta">
+        <h3>Cómo leerlo</h3>
+        <div id="interpreta-txt"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. SUFICIENCIA FINANCIERA ------------------------------------------- -->
+  <section class="panel" id="p-financiera" data-title="Suficiencia financiera">
+    <h2 class="print-title">7 · Suficiencia financiera</h2>
+    <div class="card resultado" id="suf-resultado"></div>
+    <div class="card">
+      <h3>Flujo de fondos proyectado · hasta el fin de obra</h3>
+      <div class="chart-box tall"><canvas id="c-flujo"></canvas></div>
+      <p class="nota">Millones de pesos corrientes. Ingresos = cuotas cobradas + otros aportes. Egresos = inversión remanente de obra (con inflación y sobrecosto proyectados). La línea es el saldo de caja acumulado.</p>
+    </div>
+    <div class="card sim" id="sim">
+      <h3>Simulador · ¿qué pasa si cambian los supuestos?</h3>
+      <div class="sim-grid">
+        <div class="sim-ctrl">
+          <div class="slider">
+            <div class="s-head"><label for="s-inf">Inflación mensual de la construcción</label><output id="o-inf"></output></div>
+            <input type="range" id="s-inf" min="0" max="6" step="0.1">
+          </div>
+          <div class="slider">
+            <div class="s-head"><label for="s-mora">Morosidad (beneficiarios en mora)</label><output id="o-mora"></output></div>
+            <input type="range" id="s-mora" min="0" max="40" step="any">
+          </div>
+          <div class="slider">
+            <div class="s-head"><label for="s-iac">Variación mensual del índice de actualización</label><output id="o-iac"></output></div>
+            <input type="range" id="s-iac" min="0" max="6" step="0.1">
+          </div>
+          <button type="button" id="sim-reset" class="btn-sec">Volver a los valores base</button>
+        </div>
+        <div class="sim-out" id="sim-out"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p><strong>SERCA Consultora</strong> · info@sercaconsultora.com · 358 4 905227</p>
+  <p class="small">Tablero de ejemplo con datos ficticios con fines ilustrativos. «Cooperativa Ejemplo Ltda.» no existe.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
